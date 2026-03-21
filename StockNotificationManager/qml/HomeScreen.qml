@@ -43,9 +43,12 @@ Item {
                     border.width: 1
                     
                     RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingLarge
-                        spacing: Theme.spacingLarge
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: Theme.spacingLarge
+                        anchors.rightMargin: Theme.spacingLarge
+                        spacing: Theme.spacingMedium
                         
                         // User avatar
                         Rectangle {
@@ -65,7 +68,6 @@ Item {
                         
                         // User info
                         ColumnLayout {
-                            Layout.fillWidth: true
                             spacing: Theme.spacingSmall
                             
                             Text {
@@ -88,15 +90,20 @@ Item {
                             }
                         }
                         
+                        // Spacer to push logout button to right
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                        
                         // Logout button
                         CustomButton {
                             width: 120
                             height: 40
                             text: "Logout"
-                            buttonColor: Theme.surface
-                            hoverColor: Theme.surfaceLight
-                            pressedColor: Theme.surfaceHover
-                            textColor: Theme.textPrimary
+                            buttonColor: Theme.error
+                            hoverColor: "#dc2626"
+                            pressedColor: "#b91c1c"
+                            textColor: "#ffffff"
                             onClicked: screenNavigator.navigateTo("login")
                         }
                     }
