@@ -18,34 +18,9 @@ Item {
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#1e293b" }
-                GradientStop { position: 1.0; color: "#0f172a" }
+                GradientStop { position: 0.0; color: Theme.gradientTop }
+                GradientStop { position: 1.0; color: Theme.gradientBottom }
             }
-        }
-        
-        // Decorative circles
-        Rectangle {
-            width: 600
-            height: 600
-            radius: 300
-            color: Theme.primary
-            opacity: 0.05
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.leftMargin: -200
-            anchors.topMargin: -200
-        }
-        
-        Rectangle {
-            width: 400
-            height: 400
-            radius: 200
-            color: Theme.secondary
-            opacity: 0.05
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.rightMargin: -100
-            anchors.bottomMargin: -100
         }
         
         // Main content

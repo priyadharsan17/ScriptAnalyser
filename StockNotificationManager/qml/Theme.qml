@@ -12,15 +12,19 @@ QtObject {
     readonly property color secondaryDark: "#059669"
     
     // Background colors
-    readonly property color background: "#1e1e1e"        // VS Code dark background
-    readonly property color surface: "#252526"
-    readonly property color surfaceLight: "#2d2d30"
-    readonly property color surfaceHover: "#37373d"
+    readonly property color background: "#f5f5f5"        // Light grey background
+    readonly property color surface: "#ffffff"
+    readonly property color surfaceLight: "#f9f9f9"
+    readonly property color surfaceHover: "#f0f0f0"
+    
+    // Gradient colors
+    readonly property color gradientTop: "#f5f5f5"       // Light grey
+    readonly property color gradientBottom: "#e8e8e8"    // Slightly darker light grey
     
     // Text colors
-    readonly property color textPrimary: "#cccccc"
-    readonly property color textSecondary: "#9d9d9d"
-    readonly property color textTertiary: "#858585"
+    readonly property color textPrimary: "#2c2c2c"
+    readonly property color textSecondary: "#5a5a5a"
+    readonly property color textTertiary: "#7a7a7a"
     
     // Accent colors
     readonly property color success: "#10b981"
@@ -29,13 +33,13 @@ QtObject {
     readonly property color info: "#3b82f6"
     
     // Card colors
-    readonly property color cardBackground: "#252526"
-    readonly property color cardHover: "#2d2d30"
-    readonly property color cardBorder: "#3e3e42"
+    readonly property color cardBackground: "#ffffff"
+    readonly property color cardHover: "#f9f9f9"
+    readonly property color cardBorder: "#d0d0d0"
     
     // Input colors
-    readonly property color inputBackground: "#2d2d30"
-    readonly property color inputBorder: "#3e3e42"
+    readonly property color inputBackground: "#ffffff"
+    readonly property color inputBorder: "#d0d0d0"
     readonly property color inputFocus: "#3b82f6"
     
     // Shadows
