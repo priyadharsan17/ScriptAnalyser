@@ -1,0 +1,4 @@
+module qml
+singleton Theme 1.0 Theme.qml
+Login 1.0 Login.qml
+HomeScreen 1.0 HomeScreen.qml
