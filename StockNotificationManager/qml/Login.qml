@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import Qt5Compat.GraphicalEffects
 import "."
 
 Item {
@@ -68,12 +69,23 @@ Item {
             
             // Login card
             Rectangle {
+                id: loginCard
                 Layout.fillWidth: true
                 height: 400
                 color: Theme.surface
                 radius: Theme.radiusLarge
                 border.color: Theme.cardBorder
                 border.width: 1
+                
+                layer.enabled: true
+                layer.effect: DropShadow {
+                    transparentBorder: true
+                    horizontalOffset: 0
+                    verticalOffset: 4
+                    radius: 16
+                    samples: 33
+                    color: "#40000000"
+                }
                 
                 ColumnLayout {
                     anchors.fill: parent

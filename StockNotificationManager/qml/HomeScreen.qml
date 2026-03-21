@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import Qt5Compat.GraphicalEffects
 import "."
 
 Item {
@@ -41,6 +42,16 @@ Item {
                     radius: Theme.radiusLarge
                     border.color: Theme.cardBorder
                     border.width: 1
+                    
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        transparentBorder: true
+                        horizontalOffset: 0
+                        verticalOffset: 2
+                        radius: 12
+                        samples: 25
+                        color: "#30000000"
+                    }
                     
                     RowLayout {
                         anchors.left: parent.left
@@ -201,6 +212,16 @@ Item {
     radius: Theme.radiusLarge
     border.color: Theme.cardBorder
     border.width: 1
+    
+    layer.enabled: true
+    layer.effect: DropShadow {
+        transparentBorder: true
+        horizontalOffset: 0
+        verticalOffset: 4
+        radius: 12
+        samples: 25
+        color: "#30000000"
+    }
     
     // Hover effect
     Rectangle {
