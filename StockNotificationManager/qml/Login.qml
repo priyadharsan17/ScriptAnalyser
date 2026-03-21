@@ -6,6 +6,10 @@ import "."
 Item {
     id: root
     
+    function handleLogin() {
+        loginBackend.login(usernameField.text, passwordField.text)
+    }
+    
     Rectangle {
         anchors.fill: parent
         color: Theme.background
@@ -122,123 +126,33 @@ Item {
                     }
                     
                     // Username field
-                    ColumnLayout {
+                    CustomTextField {
+                        id: usernameField
                         Layout.fillWidth: true
-                        spacing: Theme.spacingSmall
-                        
-                        Text {
-                            text: "Username"
-                            color: Theme.textSecondary
-                            font.pixelSize: Theme.fontSizeNormal
-                        }
-                        
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 50
-                            color: Theme.inputBackground
-                            border.color: usernameField.activeFocus ? Theme.inputFocus : Theme.inputBorder
-                            border.width: usernameField.activeFocus ? 2 : 1
-                            radius: Theme.radiusNormal
-                            
-                            TextInput {
-                                id: usernameField
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingNormal
-                                color: Theme.textPrimary
-                                font.pixelSize: Theme.fontSizeNormal
-                                verticalAlignment: Text.AlignVCenter
-                                clip: true
-                                selectByMouse: true
-                                
-                                Text {
-                                    anchors.fill: parent
-                                    text: "Enter your username"
-                                    color: Theme.textTertiary
-                                    font.pixelSize: Theme.fontSizeNormal
-                                    verticalAlignment: Text.AlignVCenter
-                                    visible: !usernameField.text && !usernameField.activeFocus
-                                }
-                                
-                                Keys.onReturnPressed: passwordField.forceActiveFocus()
-                            }
-                        }
+                        label: "Username"
+                        placeholder: "Enter your username"
+                        onReturnPressed: passwordField.forceActiveFocus()
                     }
                     
                     // Password field
-                    ColumnLayout {
+                    CustomTextField {
+                        id: passwordField
                         Layout.fillWidth: true
-                        spacing: Theme.spacingSmall
-                        
-                        Text {
-                            text: "Password"
-                            color: Theme.textSecondary
-                            font.pixelSize: Theme.fontSizeNormal
-                        }
-                        
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 50
-                            color: Theme.inputBackground
-                            border.color: passwordField.activeFocus ? Theme.inputFocus : Theme.inputBorder
-                            border.width: passwordField.activeFocus ? 2 : 1
-                            radius: Theme.radiusNormal
-                            
-                            TextInput {
-                                id: passwordField
-                                anchors.fill: parent
-                                anchors.margins: Theme.spacingNormal
-                                color: Theme.textPrimary
-                                font.pixelSize: Theme.fontSizeNormal
-                                verticalAlignment: Text.AlignVCenter
-                                echoMode: TextInput.Password
-                                clip: true
-                                selectByMouse: true
-                                
-                                Text {
-                                    anchors.fill: parent
-                                    text: "Enter your password"
-                                    color: Theme.textTertiary
-                                    font.pixelSize: Theme.fontSizeNormal
-                                    verticalAlignment: Text.AlignVCenter
-                                    visible: !passwordField.text && !passwordField.activeFocus
-                                }
-                                
-                                Keys.onReturnPressed: loginButton.clicked()
-                            }
-                        }
+                        label: "Password"
+                        placeholder: "Enter your password"
+                        isPassword: true
+                        onReturnPressed: handleLogin()
                     }
                     
                     Item { Layout.fillHeight: true }
                     
                     // Login button
-                    Rectangle {
+                    CustomButton {
                         id: loginButton
                         Layout.fillWidth: true
-                        height: 50
-                        color: loginButtonArea.pressed ? Theme.primaryDark : 
-                               loginButtonArea.containsMouse ? Theme.primaryLight : Theme.primary
-                        radius: Theme.radiusNormal
+                        text: loginBackend.isLoading ? "Signing in..." : "Sign In"
                         enabled: !loginBackend.isLoading
-                        
-                        Behavior on color { ColorAnimation { duration: Theme.animationDuration } }
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: loginBackend.isLoading ? "Signing in..." : "Sign In"
-                            color: "white"
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.bold: true
-                        }
-                        
-                        MouseArea {
-                            id: loginButtonArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                loginBackend.login(usernameField.text, passwordField.text)
-                            }
-                        }
+                        onClicked: handleLogin()
                     }
                 }
             }

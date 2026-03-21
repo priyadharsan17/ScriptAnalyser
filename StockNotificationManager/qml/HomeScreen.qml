@@ -89,31 +89,15 @@ Item {
                         }
                         
                         // Logout button
-                        Rectangle {
+                        CustomButton {
                             width: 120
                             height: 40
-                            color: logoutArea.pressed ? Theme.surfaceHover : 
-                                   logoutArea.containsMouse ? Theme.surfaceLight : Theme.surface
-                            border.color: Theme.cardBorder
-                            border.width: 1
-                            radius: Theme.radiusNormal
-                            
-                            Behavior on color { ColorAnimation { duration: Theme.animationDuration } }
-                            
-                            Text {
-                                anchors.centerIn: parent
-                                text: "Logout"
-                                color: Theme.textPrimary
-                                font.pixelSize: Theme.fontSizeNormal
-                            }
-                            
-                            MouseArea {
-                                id: logoutArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: screenNavigator.navigateTo("login")
-                            }
+                            text: "Logout"
+                            buttonColor: Theme.surface
+                            hoverColor: Theme.surfaceLight
+                            pressedColor: Theme.surfaceHover
+                            textColor: Theme.textPrimary
+                            onClicked: screenNavigator.navigateTo("login")
                         }
                     }
                 }

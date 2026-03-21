@@ -2,3 +2,5 @@ module qml
 singleton Theme 1.0 Theme.qml
 Login 1.0 Login.qml
 HomeScreen 1.0 HomeScreen.qml
+CustomButton 1.0 CustomButton.qml
+CustomTextField 1.0 CustomTextField.qml
