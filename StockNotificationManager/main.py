@@ -18,6 +18,7 @@ from src.broker_manager import BrokerManager, BrokerType
 
 from src.messenger_manager import MessengerManager, MessengerType
 from src.messenger_base import MessageType
+from src.settings_manager import SettingsManager
 
 # Configure logging
 logging.basicConfig(
@@ -281,6 +282,12 @@ def main():
     
     # Get the current directory
     current_dir = Path(__file__).parent
+
+    # Initialize settings manager (use config/angel_config.json and a default)
+    settings_file = Path(r"C:\MyPrograms\STN\angel_config.json")
+    default_settings_file = current_dir / 'config' / 'angel_config.example.json'
+
+    angel_one_settings_manager = SettingsManager(settings_file, default_settings_file)
     
     # Create broker manager (singleton instance for the app)
     broker_manager = BrokerManager()
@@ -295,7 +302,6 @@ def main():
     root_context.setContextProperty("screenNavigator", screen_navigator)
     root_context.setContextProperty("loginBackend", login_backend)
     root_context.setContextProperty("homeBackend", home_backend)
-    root_context.setContextProperty("brokerManager", broker_manager)
     
     # Add import path for QML modules
     engine.addImportPath(str(current_dir / "qml"))
