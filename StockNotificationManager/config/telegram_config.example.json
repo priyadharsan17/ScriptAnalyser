@@ -3,6 +3,7 @@
   "chat_ids": [
     -1001234567890
   ],
-  "group_chat_id": -1001234567890,
+  "stock_notification_group_chat_id": -1001234567890,
+  "threshold_notification_group_chat_id": -1001234567890,
   "send_test_message": true
 }

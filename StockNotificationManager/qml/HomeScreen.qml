@@ -286,24 +286,6 @@ Item {
         }
         
         Item { Layout.fillHeight: true }
-        
-        // Status indicator
-        RowLayout {
-            spacing: Theme.spacingSmall
-            
-            Rectangle {
-                width: 8
-                height: 8
-                radius: 4
-                color: Theme.textTertiary
-            }
-            
-            Text {
-                text: "Coming soon"
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.textTertiary
-            }
-        }
     }
     
     MouseArea {

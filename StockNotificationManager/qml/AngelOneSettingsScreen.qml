@@ -28,7 +28,7 @@ Item {
             
             ColumnLayout {
                 id: mainLayout
-                width: Math.min(parent.width - Theme.spacingXLarge * 2, 800)
+                width: parent.width - Theme.spacingLarge * 2
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.topMargin: Theme.spacingXLarge
@@ -37,7 +37,7 @@ Item {
                 // Header section
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 100
+                    height: 80
                     color: Theme.surface
                     radius: Theme.radiusLarge
                     border.color: Theme.cardBorder
@@ -54,8 +54,11 @@ Item {
                     }
                     
                     RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingLarge
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: Theme.spacingLarge
+                        anchors.rightMargin: Theme.spacingLarge
                         spacing: Theme.spacingLarge
                         
                         // Back button
@@ -63,30 +66,21 @@ Item {
                             width: 100
                             height: 40
                             text: "← Back"
-                            buttonColor: Theme.surface
+                            buttonColor: Theme.surfaceLight
                             hoverColor: Theme.surfaceHover
-                            pressedColor: Theme.surfaceLight
+                            pressedColor: "#e0e0e0"
                             textColor: Theme.textPrimary
                             onClicked: screenNavigator.navigateTo("settings")
                         }
                         
-                        // Title section
-                        ColumnLayout {
+                        // Title
+                        Text {
                             Layout.fillWidth: true
-                            spacing: Theme.spacingSmall
-                            
-                            Text {
-                                text: "🔑 Angel One Settings"
-                                font.pixelSize: Theme.fontSizeXLarge
-                                font.bold: true
-                                color: Theme.textPrimary
-                            }
-                            
-                            Text {
-                                text: "Configure your Angel One broker API credentials"
-                                font.pixelSize: Theme.fontSizeNormal
-                                color: Theme.textTertiary
-                            }
+                            text: "Angel One Settings"
+                            font.pixelSize: Theme.fontSizeXLarge
+                            font.bold: true
+                            color: Theme.textPrimary
+                            verticalAlignment: Text.AlignVCenter
                         }
                     }
                 }
