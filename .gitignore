@@ -90,3 +90,10 @@ Desktop.ini
 # Environment files
 .env
 .env.*
+
+# Angel One and broker credentials
+angel_config.json
+*_config.json
+*.secret
+config/*.json
+!config/*.example.json
