@@ -26,6 +26,7 @@ class MessageType(Enum):
     DOCUMENT = "document"
     VIDEO = "video"
     AUDIO = "audio"
+    TEMPLATE = "template"
 
 
 @dataclass

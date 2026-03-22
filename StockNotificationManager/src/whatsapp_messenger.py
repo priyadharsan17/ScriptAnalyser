@@ -8,6 +8,13 @@ from datetime import datetime
 from .messenger_base import MessengerBase, MessengerStatus, MessageType, MessageReceipt
 
 try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except Exception:
+    requests = None
+    REQUESTS_AVAILABLE = False
+
+try:
     # Try importing pywhatkit for WhatsApp functionality
     import pywhatkit
     PYWHATKIT_AVAILABLE = True
@@ -34,6 +41,10 @@ class WhatsAppMessenger(MessengerBase):
         self._tab_close = True
         self._wait_time = 15  # Seconds to wait before sending
         self._close_time = 2   # Seconds to wait after sending
+        # Cloud API settings
+        self._use_cloud_api = False
+        self._cloud_phone_number_id: Optional[str] = None
+        self._access_token: Optional[str] = None
     
     def authenticate(self, credentials: Dict[str, Any]) -> bool:
         """
@@ -70,6 +81,21 @@ class WhatsAppMessenger(MessengerBase):
             logger.info("Make sure WhatsApp Web is logged in on your default browser")
             self._status = MessengerStatus.CONNECTED
             self._credentials = credentials
+            # Check for Cloud API credentials
+            if credentials.get('use_cloud_api'):
+                if not REQUESTS_AVAILABLE:
+                    logger.error("requests library not available; install with pip install requests")
+                    self._use_cloud_api = False
+                else:
+                    phone_id = credentials.get('phone_number_id')
+                    token = credentials.get('access_token')
+                    if phone_id and token:
+                        self._use_cloud_api = True
+                        self._cloud_phone_number_id = str(phone_id)
+                        self._access_token = token
+                        logger.info("WhatsApp Cloud API enabled for messaging")
+                    else:
+                        logger.warning("Cloud API requested but phone_number_id or access_token missing")
             return True
 
         except Exception as e:
@@ -109,6 +135,88 @@ class WhatsAppMessenger(MessengerBase):
         try:
             logger.info(f"Sending WhatsApp message to {phone_number}")
             
+            # If configured to use Cloud API, send via Meta Graph API
+            if self._use_cloud_api:
+                try:
+                    headers = {
+                        "Authorization": f"Bearer {self._access_token}",
+                        "Content-Type": "application/json"
+                    }
+                    url = f"https://graph.facebook.com/v17.0/{self._cloud_phone_number_id}/messages"
+                    # Support both plain text and template messages
+                    if message_type.name == 'TEMPLATE' or getattr(message_type, 'value', '') == 'template':
+                        # message may be a dict payload or a simple pipe-separated string: "template_name|param1|param2"
+                        if isinstance(message, dict):
+                            template_name = message.get('name')
+                            language = message.get('language', 'en_US')
+                            components = message.get('components', [])
+                        else:
+                            parts = str(message).split('|')
+                            template_name = parts[0]
+                            language = 'en_US'
+                            params = parts[1:]
+                            components = []
+                            if params:
+                                # Build body parameters
+                                body_params = [{'type': 'text', 'text': str(p)} for p in params]
+                                components = [{'type': 'body', 'parameters': body_params}]
+
+                        payload = {
+                            "messaging_product": "whatsapp",
+                            "to": phone_number,
+                            "type": "template",
+                            "template": {
+                                "name": template_name,
+                                "language": {"code": language},
+                                "components": components
+                            }
+                        }
+                    else:
+                        payload = {
+                            "messaging_product": "whatsapp",
+                            "to": phone_number,
+                            "type": "text",
+                            "text": {"body": message}
+                        }
+                    resp = requests.post(url, headers=headers, json=payload)
+                    if resp.ok:
+                        data = resp.json()
+
+                        print(f"WhatsApp Cloud API response: {data}")
+                        msg_id = None
+                        try:
+                            msg_id = data.get('messages', [{}])[0].get('id')
+                        except Exception:
+                            msg_id = None
+
+                        return MessageReceipt(
+                            message_id=msg_id or f"wa_cloud_{datetime.now().timestamp()}",
+                            timestamp=datetime.now().isoformat(),
+                            status="sent" if resp.ok else "failed",
+                            recipient=phone_number,
+                            message_type=message_type
+                        )
+                    else:
+                        logger.error(f"WhatsApp Cloud API error: {resp.status_code} {resp.text}")
+                        return MessageReceipt(
+                            message_id=f"wa_cloud_{datetime.now().timestamp()}",
+                            timestamp=datetime.now().isoformat(),
+                            status="failed",
+                            recipient=phone_number,
+                            message_type=message_type,
+                            error=resp.text
+                        )
+                except Exception as e:
+                    logger.error(f"Exception sending via WhatsApp Cloud API: {e}")
+                    return MessageReceipt(
+                        message_id=f"wa_cloud_{datetime.now().timestamp()}",
+                        timestamp=datetime.now().isoformat(),
+                        status="failed",
+                        recipient=phone_number,
+                        message_type=message_type,
+                        error=str(e)
+                    )
+
             if message_type == MessageType.IMAGE and media_path:
                 # Send image with caption
                 pywhatkit.sendwhats_image(

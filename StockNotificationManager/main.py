@@ -16,6 +16,9 @@ from src.login_backend import LoginBackend
 from src.home_backend import HomeBackend
 from src.broker_manager import BrokerManager, BrokerType
 
+from src.messenger_manager import MessengerManager, MessengerType
+from src.messenger_base import MessageType
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,  # Changed back to INFO for cleaner output
@@ -147,6 +150,40 @@ def test_angel_one_integration():
         
         logger.info("-" * 80)
         
+        # Initialize messenger manager and WhatsApp messenger (authenticate once)
+        msg_manager = MessengerManager()
+        try:
+            whatsapp = msg_manager.create_messenger(MessengerType.WHATSAPP)
+
+            # Try to load Cloud API credentials from config/whatsapp_config.json
+            wa_config_file = Path(__file__).parent / 'config' / 'whatsapp_config.json'
+            wa_credentials = {}
+            if wa_config_file.exists():
+                try:
+                    with open(wa_config_file, 'r') as wf:
+                        wa_conf = json.load(wf)
+                    wa_credentials = {
+                        'use_cloud_api': bool(wa_conf.get('use_cloud_api', False)),
+                        'phone_number_id': wa_conf.get('phone_number_id'),
+                        'access_token': wa_conf.get('access_token')
+                    }
+                    logger.info(f"Loaded WhatsApp Cloud config from {wa_config_file}")
+                except Exception as e:
+                    logger.error(f"Failed to read WhatsApp config: {e}")
+
+            # Authenticate with provided credentials (Cloud API if configured)
+            if wa_credentials:
+                if not whatsapp.authenticate(wa_credentials):
+                    logger.error("WhatsApp authentication failed using provided config; falling back to pywhatkit (if available)")
+            else:
+                # No cloud config provided; use default authenticate (pywhatkit)
+                if not whatsapp.authenticate({}):
+                    logger.error("WhatsApp authentication failed (pywhatkit not available)")
+
+            logger.info("WhatsApp messenger initialized for alerts")
+        except Exception as e:
+            logger.error(f"Failed to initialize WhatsApp messenger: {e}")
+
         # Get LTP for a few scripts
         logger.info("\n=== Getting Last Traded Prices ===")
         for script in nifty_50_scripts[:5]:  # Get LTP for first 5
@@ -156,6 +193,22 @@ def test_angel_one_integration():
                     logger.info(f"{script.symbol:<15} LTP: ₹{ltp_data.ltp:>10.2f}  "
                               f"Change: {ltp_data.change_percent:>+6.2f}%  "
                               f"Volume: {ltp_data.volume:>12,}")
+                    # Send alert message via WhatsApp
+                    try:
+                        alert_msg = (
+                            f"Stock Alert - {script.symbol}\n"
+                            f"Price: ₹{ltp_data.ltp:.2f}\n"
+                            f"Change: {ltp_data.change_percent:+.2f}%\n"
+                        )
+                        receipt = whatsapp.send_message_to_number("+919442241270", alert_msg, MessageType.TEXT)
+                        if receipt is None:
+                            logger.warning(f"No receipt from WhatsApp for {script.symbol}")
+                        elif getattr(receipt, 'status', '') == 'sent' or getattr(receipt, 'success', None):
+                            logger.info(f"WhatsApp alert sent for {script.symbol}")
+                        else:
+                            logger.warning(f"WhatsApp alert failed for {script.symbol}: {getattr(receipt, 'error', '')}")
+                    except Exception as e:
+                        logger.error(f"Error sending WhatsApp alert for {script.symbol}: {e}")
             except Exception as e:
                 logger.error(f"Error getting LTP for {script.symbol}: {e}")
         
