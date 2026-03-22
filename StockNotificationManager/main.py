@@ -184,6 +184,46 @@ def test_angel_one_integration():
         except Exception as e:
             logger.error(f"Failed to initialize WhatsApp messenger: {e}")
 
+        # Initialize Telegram messenger if configuration exists
+        try:
+            tg_config_file = Path(__file__).parent / 'config' / 'telegram_config.json'
+            if tg_config_file.exists():
+                try:
+                    with open(tg_config_file, 'r') as tf:
+                        tg_conf = json.load(tf)
+
+                    tg_credentials = {'bot_token': tg_conf.get('bot_token')}
+                    telegram_ok = msg_manager.set_active_messenger(MessengerType.TELEGRAM, tg_credentials)
+                    if telegram_ok:
+                        logger.info(f"Telegram messenger authenticated")
+                        tg = msg_manager.get_messenger(MessengerType.TELEGRAM)
+                        # Optional test send
+                        try:
+                            send_test = bool(tg_conf.get('send_test_message', False))
+                            chat_ids = tg_conf.get('chat_ids') or ([tg_conf.get('group_chat_id')] if tg_conf.get('group_chat_id') else [])
+                            if send_test and chat_ids:
+                                for cid in chat_ids:
+                                    try:
+                                        receipt = tg.send_message_to_group(str(cid), "Test broadcast — bot integrated successfully", MessageType.TEXT)
+                                        if receipt and getattr(receipt, 'status', '') == 'sent':
+                                            logger.info(f"Telegram test message sent to {cid}")
+                                        else:
+                                            logger.warning(f"Telegram test message failed for {cid}: {getattr(receipt, 'error', '')}")
+                                    except Exception as e:
+                                        logger.error(f"Error sending Telegram test message to {cid}: {e}")
+                            else:
+                                logger.info("Telegram config found but `send_test_message` is false or no chat_ids provided")
+                        except Exception as e:
+                            logger.error(f"Error during Telegram test send: {e}")
+                    else:
+                        logger.error("Telegram authentication failed; check bot token and ensure bot is added to group")
+                except Exception as e:
+                    logger.error(f"Failed to read Telegram config: {e}")
+            else:
+                logger.info("No Telegram config found; skipping Telegram initialization")
+        except Exception as e:
+            logger.error(f"Telegram initialization error: {e}")
+
         # Get LTP for a few scripts
         logger.info("\n=== Getting Last Traded Prices ===")
         for script in nifty_50_scripts[:5]:  # Get LTP for first 5
