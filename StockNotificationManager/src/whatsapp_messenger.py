@@ -143,6 +143,10 @@ class WhatsAppMessenger(MessengerBase):
                         "Content-Type": "application/json"
                     }
                     url = f"https://graph.facebook.com/v17.0/{self._cloud_phone_number_id}/messages"
+                    # Ensure phone number is E.164 (starts with +)
+                    if isinstance(phone_number, str) and phone_number and not phone_number.startswith('+') and phone_number.isdigit():
+                        phone_number = f"+{phone_number}"
+
                     # Support both plain text and template messages
                     if message_type.name == 'TEMPLATE' or getattr(message_type, 'value', '') == 'template':
                         # message may be a dict payload or a simple pipe-separated string: "template_name|param1|param2"
@@ -172,11 +176,21 @@ class WhatsAppMessenger(MessengerBase):
                             }
                         }
                     else:
+                        # Support optional preview_url and match curl format with recipient_type
+                        text_payload = {"body": message}
+                        if isinstance(message, dict):
+                            # allow dict to specify preview_url or body
+                            if 'body' in message:
+                                text_payload['body'] = message.get('body')
+                            if 'preview_url' in message:
+                                text_payload['preview_url'] = bool(message.get('preview_url'))
+
                         payload = {
                             "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
                             "to": phone_number,
                             "type": "text",
-                            "text": {"body": message}
+                            "text": text_payload
                         }
                     resp = requests.post(url, headers=headers, json=payload)
                     if resp.ok:
