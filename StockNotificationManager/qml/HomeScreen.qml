@@ -7,6 +7,14 @@ import "."
 Item {
     id: root
     
+    // Listen to navigation signal from backend
+    Connections {
+        target: homeBackend
+        function onCardNavigate(screenName) {
+            screenNavigator.navigateTo(screenName)
+        }
+    }
+    
     Rectangle {
         anchors.fill: parent
         color: Theme.background

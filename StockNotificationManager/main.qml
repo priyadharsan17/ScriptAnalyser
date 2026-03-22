@@ -53,5 +53,35 @@ Window {
             
             opacity: active ? 1 : 0
         }
+        
+        // Settings Screen
+        Loader {
+            id: settingsLoader
+            anchors.fill: parent
+            source: "qml/SettingsScreen.qml"
+            active: screenNavigator.currentScreen === "settings"
+            visible: active
+            
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.animationDurationSlow }
+            }
+            
+            opacity: active ? 1 : 0
+        }
+        
+        // Angel One Settings Screen
+        Loader {
+            id: angelOneSettingsLoader
+            anchors.fill: parent
+            source: "qml/AngelOneSettingsScreen.qml"
+            active: screenNavigator.currentScreen === "angelOneSettings"
+            visible: active
+            
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.animationDurationSlow }
+            }
+            
+            opacity: active ? 1 : 0
+        }
     }
 }

@@ -19,6 +19,7 @@ from src.broker_manager import BrokerManager, BrokerType
 from src.messenger_manager import MessengerManager, MessengerType
 from src.messenger_base import MessageType
 from src.settings_manager import SettingsManager
+from src.angel_one_settings_backend import AngelOneSettingsBackend
 
 # Configure logging
 logging.basicConfig(
@@ -287,7 +288,27 @@ def main():
     settings_file = Path(r"C:\MyPrograms\STN\angel_config.json")
     default_settings_file = current_dir / 'config' / 'angel_config.example.json'
 
-    angel_one_settings_manager = SettingsManager(settings_file, default_settings_file)
+    # Ensure default settings file exists
+    if not default_settings_file.exists():
+        try:
+            default_settings_file.parent.mkdir(parents=True, exist_ok=True)
+            default_settings_file.write_text(json.dumps({
+                "api_key": "",
+                "client_id": "",
+                "password": "",
+                "totp_secret": ""
+            }, indent=2), encoding='utf-8')
+            logger.info(f"Created minimal default Angel One settings at {default_settings_file}")
+        except Exception as e:
+            logger.error(f"Failed to create default Angel One settings file: {e}")
+
+    # Instantiate SettingsManager
+    try:
+        angel_one_settings_manager = SettingsManager(settings_file, default_settings_file)
+        logger.info("Angel One SettingsManager initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize Angel One SettingsManager: {e}")
+        angel_one_settings_manager = None
     
     # Create broker manager (singleton instance for the app)
     broker_manager = BrokerManager()
@@ -297,11 +318,17 @@ def main():
     login_backend = LoginBackend()
     home_backend = HomeBackend()
     
+    # Create Angel One Settings backend
+    angel_one_settings_backend = None
+    if angel_one_settings_manager:
+        angel_one_settings_backend = AngelOneSettingsBackend(angel_one_settings_manager)
+    
     # Register context properties
     root_context = engine.rootContext()
     root_context.setContextProperty("screenNavigator", screen_navigator)
     root_context.setContextProperty("loginBackend", login_backend)
     root_context.setContextProperty("homeBackend", home_backend)
+    root_context.setContextProperty("angelOneSettingsBackend", angel_one_settings_backend)
     
     # Add import path for QML modules
     engine.addImportPath(str(current_dir / "qml"))

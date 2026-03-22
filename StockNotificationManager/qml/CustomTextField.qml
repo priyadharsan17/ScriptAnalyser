@@ -9,6 +9,7 @@ Item {
     property string placeholder: ""
     property string text: ""
     property bool isPassword: false
+    property bool readOnly: false
     property color labelColor: Theme.textSecondary
     property color backgroundColor: Theme.inputBackground
     property color borderColor: Theme.inputBorder
@@ -38,10 +39,11 @@ Item {
         Rectangle {
             width: parent.width
             height: 50
-            color: root.backgroundColor
+            color: root.readOnly ? "#f5f5f5" : root.backgroundColor
             border.color: textInput.activeFocus ? root.focusBorderColor : root.borderColor
             border.width: textInput.activeFocus ? 2 : 1
             radius: Theme.radiusNormal
+            opacity: root.readOnly ? 0.7 : 1.0
             
             Behavior on border.color {
                 ColorAnimation { duration: Theme.animationDuration }
@@ -51,23 +53,41 @@ Item {
                 NumberAnimation { duration: Theme.animationDuration }
             }
             
+            Behavior on color {
+                ColorAnimation { duration: Theme.animationDuration }
+            }
+            
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.animationDuration }
+            }
+            
             TextInput {
                 id: textInput
                 anchors.fill: parent
                 anchors.margins: Theme.spacingNormal
-                color: root.textColor
+                color: root.readOnly ? Theme.textTertiary : root.textColor
                 font.pixelSize: Theme.fontSizeNormal
                 verticalAlignment: Text.AlignVCenter
                 echoMode: root.isPassword ? TextInput.Password : TextInput.Normal
+                readOnly: root.readOnly
                 clip: true
-                selectByMouse: true
+                selectByMouse: !root.readOnly
+                text: root.text
                 
                 onTextChanged: {
-                    root.text = text
-                    root.textEdited(text)
+                    if (root.text !== text) {
+                        root.text = text
+                        if (!root.readOnly) {
+                            root.textEdited(text)
+                        }
+                    }
                 }
                 
-                Keys.onReturnPressed: root.returnPressed()
+                Keys.onReturnPressed: {
+                    if (!root.readOnly) {
+                        root.returnPressed()
+                    }
+                }
                 
                 Text {
                     anchors.fill: parent
@@ -77,6 +97,17 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                     visible: !textInput.text && !textInput.activeFocus
                 }
+            }
+            
+            // MouseArea to handle clicks on the entire field
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (!root.readOnly) {
+                        textInput.forceActiveFocus()
+                    }
+                }
+                cursorShape: root.readOnly ? Qt.ArrowCursor : Qt.IBeamCursor
             }
         }
     }

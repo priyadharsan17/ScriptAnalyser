@@ -5,6 +5,8 @@ from datetime import datetime
 class HomeBackend(QObject):
     """Backend logic for the home screen."""
     
+    cardNavigate = Signal(str)
+    
     def __init__(self):
         super().__init__()
         self._username = ""
@@ -33,4 +35,6 @@ class HomeBackend(QObject):
     def cardClicked(self, cardName):
         """Handle card click events."""
         print(f"Card clicked: {cardName}")
-        # Functionality to be implemented later
+        # Navigate to settings screen if Settings card is clicked
+        if cardName == "Settings":
+            self.cardNavigate.emit("settings")
