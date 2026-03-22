@@ -20,6 +20,7 @@ from src.messenger_manager import MessengerManager, MessengerType
 from src.messenger_base import MessageType
 from src.settings_manager import SettingsManager
 from src.angel_one_settings_backend import AngelOneSettingsBackend
+from src.telegram_settings_backend import TelegramSettingsBackend
 
 # Configure logging
 logging.basicConfig(
@@ -285,7 +286,7 @@ def main():
     current_dir = Path(__file__).parent
 
     # Initialize settings manager (use config/angel_config.json and a default)
-    settings_file = Path(r"C:\MyPrograms\STN\angel_config.json")
+    settings_file = current_dir / 'config' / 'angel_config.json'
     default_settings_file = current_dir / 'config' / 'angel_config.example.json'
 
     # Ensure default settings file exists
@@ -310,6 +311,30 @@ def main():
         logger.error(f"Failed to initialize Angel One SettingsManager: {e}")
         angel_one_settings_manager = None
     
+    # Initialize Telegram settings manager
+    telegram_settings_file = current_dir / 'config' / 'telegram_config.json'
+    telegram_default_settings_file = current_dir / 'config' / 'telegram_config.example.json'
+
+    # Ensure Telegram default settings file exists
+    if not telegram_default_settings_file.exists():
+        try:
+            telegram_default_settings_file.parent.mkdir(parents=True, exist_ok=True)
+            telegram_default_settings_file.write_text(json.dumps({
+                "bot_token": "",
+                "chat_ids": []
+            }, indent=2), encoding='utf-8')
+            logger.info(f"Created minimal default Telegram settings at {telegram_default_settings_file}")
+        except Exception as e:
+            logger.error(f"Failed to create default Telegram settings file: {e}")
+
+    # Instantiate Telegram SettingsManager
+    try:
+        telegram_settings_manager = SettingsManager(telegram_settings_file, telegram_default_settings_file)
+        logger.info("Telegram SettingsManager initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize Telegram SettingsManager: {e}")
+        telegram_settings_manager = None
+    
     # Create broker manager (singleton instance for the app)
     broker_manager = BrokerManager()
     
@@ -323,12 +348,18 @@ def main():
     if angel_one_settings_manager:
         angel_one_settings_backend = AngelOneSettingsBackend(angel_one_settings_manager)
     
+    # Create Telegram Settings backend
+    telegram_settings_backend = None
+    if telegram_settings_manager:
+        telegram_settings_backend = TelegramSettingsBackend(telegram_settings_manager)
+    
     # Register context properties
     root_context = engine.rootContext()
     root_context.setContextProperty("screenNavigator", screen_navigator)
     root_context.setContextProperty("loginBackend", login_backend)
     root_context.setContextProperty("homeBackend", home_backend)
     root_context.setContextProperty("angelOneSettingsBackend", angel_one_settings_backend)
+    root_context.setContextProperty("telegramSettingsBackend", telegram_settings_backend)
     
     # Add import path for QML modules
     engine.addImportPath(str(current_dir / "qml"))

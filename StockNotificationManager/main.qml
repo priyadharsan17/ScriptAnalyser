@@ -83,5 +83,20 @@ Window {
             
             opacity: active ? 1 : 0
         }
+        
+        // Telegram Settings Screen
+        Loader {
+            id: telegramSettingsLoader
+            anchors.fill: parent
+            source: "qml/TelegramSettingsScreen.qml"
+            active: screenNavigator.currentScreen === "telegramSettings"
+            visible: active
+            
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.animationDurationSlow }
+            }
+            
+            opacity: active ? 1 : 0
+        }
     }
 }

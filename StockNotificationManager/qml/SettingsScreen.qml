@@ -139,9 +139,7 @@ Item {
                         iconText: "📱"
                         accentColor: "#0088cc"
                         
-                        onCardClicked: {
-                            // TODO: Navigate to Telegram settings
-                        }
+                        onCardClicked: screenNavigator.navigateTo("telegramSettings")
                     }
                     
                     // Application Settings Card
