@@ -304,6 +304,7 @@ Item {
                                 
                                 onClicked: {
                                     testing = true
+                                    connectionStatusPopup.open()
                                     angelOneSettingsBackend.testConnection()
                                 }
                                 
@@ -311,12 +312,7 @@ Item {
                                     target: angelOneSettingsBackend
                                     function onConnectionTested(success, message) {
                                         testButton.testing = false
-                                        statusText.text = message
-                                        statusText.isError = !success
-                                        
-                                        // Hide message after 5 seconds for test results
-                                        statusMessageTimer.interval = 5000
-                                        statusMessageTimer.restart()
+                                        connectionStatusPopup.setResult(success, message)
                                     }
                                 }
                             }
@@ -367,6 +363,245 @@ Item {
         onTriggered: {
             statusText.text = ""
             interval = 3000 // Reset to default
+        }
+    }
+    
+    // Connection Status Popup
+    Rectangle {
+        id: connectionStatusPopup
+        anchors.centerIn: parent
+        width: Math.min(parent.width * 0.8, 500)
+        height: Math.min(parent.height * 0.6, 450)
+        color: Theme.surface
+        radius: Theme.radiusLarge
+        border.color: Theme.cardBorder
+        border.width: 2
+        visible: opacity > 0
+        opacity: 0
+        z: 1000
+        
+        property bool isLoading: false
+        property bool testSuccess: false
+        property string testMessage: ""
+        
+        function open() {
+            isLoading = true
+            testSuccess = false
+            testMessage = ""
+            opacity = 1
+        }
+        
+        function close() {
+            opacity = 0
+            isLoading = false
+        }
+        
+        function setResult(success, message) {
+            isLoading = false
+            testSuccess = success
+            testMessage = message
+        }
+        
+        Behavior on opacity {
+            NumberAnimation { duration: 200 }
+        }
+        
+        // Shadow overlay
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -10000
+            color: "#80000000"
+            visible: connectionStatusPopup.opacity > 0
+            z: -1
+            
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    if (!connectionStatusPopup.isLoading) {
+                        connectionStatusPopup.close()
+                    }
+                }
+            }
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: Theme.spacingLarge
+            spacing: Theme.spacingNormal
+            
+            // Header
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
+                spacing: Theme.spacingNormal
+                
+                Text {
+                    Layout.fillWidth: true
+                    text: "🔗 Connection Test"
+                    font.pixelSize: Theme.fontSizeLarge
+                    font.bold: true
+                    color: Theme.textPrimary
+                }
+                
+                CustomButton {
+                    text: "✕"
+                    width: 40
+                    height: 40
+                    buttonColor: Theme.surfaceLight
+                    hoverColor: Theme.surfaceHover
+                    textColor: Theme.textPrimary
+                    enabled: !connectionStatusPopup.isLoading
+                    onClicked: connectionStatusPopup.close()
+                }
+            }
+            
+            // Content Area
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: Theme.surfaceLight
+                radius: Theme.radiusNormal
+                border.color: Theme.cardBorder
+                border.width: 1
+                clip: true
+                
+                // Loading State
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    width: parent.width * 0.8
+                    spacing: Theme.spacingLarge
+                    visible: connectionStatusPopup.isLoading
+                    
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        width: 60
+                        height: 60
+                        color: "transparent"
+                        
+                        Rectangle {
+                            id: connectionSpinner
+                            anchors.centerIn: parent
+                            width: 50
+                            height: 50
+                            radius: 25
+                            color: "transparent"
+                            border.color: Theme.secondary
+                            border.width: 4
+                            
+                            Rectangle {
+                                width: 10
+                                height: 10
+                                radius: 5
+                                color: Theme.secondary
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.top: parent.top
+                            }
+                            
+                            RotationAnimation {
+                                target: connectionSpinner
+                                from: 0
+                                to: 360
+                                duration: 1200
+                                loops: Animation.Infinite
+                                running: connectionStatusPopup.isLoading
+                            }
+                        }
+                    }
+                    
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                        text: "Testing Connection..."
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.bold: true
+                        color: Theme.textPrimary
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                        text: "Verifying your Angel One credentials"
+                        font.pixelSize: Theme.fontSizeNormal
+                        color: Theme.textSecondary
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+                
+                // Result State
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingLarge
+                    spacing: Theme.spacingNormal
+                    visible: !connectionStatusPopup.isLoading
+                    
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        width: 60
+                        height: 60
+                        radius: 30
+                        color: connectionStatusPopup.testSuccess ? "#d1fae5" : "#fee2e2"
+                        border.color: connectionStatusPopup.testSuccess ? "#6ee7b7" : "#fca5a5"
+                        border.width: 2
+                        
+                        Text {
+                            anchors.centerIn: parent
+                            text: connectionStatusPopup.testSuccess ? "✓" : "✗"
+                            font.pixelSize: 36
+                            font.bold: true
+                            color: connectionStatusPopup.testSuccess ? "#065f46" : "#991b1b"
+                        }
+                    }
+                    
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignHCenter
+                        text: connectionStatusPopup.testSuccess ? "Connection Successful!" : "Connection Failed"
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.bold: true
+                        color: connectionStatusPopup.testSuccess ? "#065f46" : "#991b1b"
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                    }
+                    
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        
+                        Rectangle {
+                            width: parent.width
+                            implicitHeight: messageText.height + Theme.spacingLarge * 2
+                            color: Theme.surface
+                            radius: Theme.radiusNormal
+                            border.color: Theme.cardBorder
+                            border.width: 1
+                            
+                            Text {
+                                id: messageText
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingLarge
+                                text: connectionStatusPopup.testMessage
+                                font.pixelSize: Theme.fontSizeNormal
+                                color: Theme.textPrimary
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+                    
+                    CustomButton {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+                        text: "Close"
+                        buttonColor: connectionStatusPopup.testSuccess ? Theme.success : Theme.error
+                        hoverColor: connectionStatusPopup.testSuccess ? "#10b981" : "#dc2626"
+                        pressedColor: connectionStatusPopup.testSuccess ? "#059669" : "#b91c1c"
+                        textColor: "#ffffff"
+                        onClicked: connectionStatusPopup.close()
+                    }
+                }
+            }
         }
     }
 }
