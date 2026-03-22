@@ -9,7 +9,8 @@ Stock Notification Manager - A PySide6 application for monitoring stock prices w
 - 📊 Dashboard with feature cards
 - 🔌 Broker integration (Angel One SmartAPI)
 - 📈 Real-time stock monitoring
-- 🔔 Price notifications (coming soon)
+- � Messenger integration (WhatsApp & Telegram)
+- 🔔 Price notifications via WhatsApp/Telegram
 
 ---
 
@@ -35,7 +36,7 @@ This creates a `.venv` folder, installs `PySide6`, and writes `requirements.txt`
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate.bat
-pip install PySide6 smartapi-python
+pip install PySide6 smartapi-python pywhatkit python-telegram-bot
 pip freeze > requirements.txt
 ```
 
@@ -87,6 +88,25 @@ See `Documentation/Running_Tests.md` for detailed test instructions.
 
 **Integration procedures:** See `Documentation/Broker_Integration_Procedures.md`
 
+### WhatsApp & Telegram Messengers
+
+**WhatsApp Setup:**
+1. Login to WhatsApp Web on your browser
+2. Keep session active
+3. No API credentials needed
+
+**Telegram Setup:**
+1. Create a bot with [@BotFather](https://t.me/BotFather)
+2. Get bot token from @BotFather
+3. Get your chat ID from [@userinfobot](https://t.me/userinfobot)
+
+**Testing:**
+```powershell
+python test_messengers.py
+```
+
+**Complete guide:** See `Documentation/Messenger_Integration.md`
+
 ---
 
 ## Project Structure
@@ -98,6 +118,7 @@ StockNotificationManager/
 ├── main.qml                # Main QML window
 ├── setup_venv_and_freeze.bat  # Setup script
 ├── requirements.txt        # Python dependencies
+├── test_messengers.py      # Messenger integration test
 ├── src/                    # Python backend
 │   ├── screen_navigator.py
 │   ├── login_backend.py
@@ -105,7 +126,11 @@ StockNotificationManager/
 │   ├── broker_base.py      # Abstract broker interface
 │   ├── angel_one_broker.py # Angel One implementation
 │   ├── motilal_oswal_broker.py
-│   └── broker_manager.py   # Broker factory
+│   ├── broker_manager.py   # Broker factory
+│   ├── messenger_base.py   # Abstract messenger interface
+│   ├── whatsapp_messenger.py # WhatsApp implementation
+│   ├── telegram_messenger.py # Telegram implementation
+│   └── messenger_manager.py  # Messenger factory
 ├── qml/                    # QML UI files
 │   ├── Theme.qml          # App theme
 │   ├── Login.qml
@@ -116,6 +141,7 @@ StockNotificationManager/
 └── Documentation/          # Guides and procedures
     ├── AngelOne_SmartAPI_Setup.md
     ├── Broker_Integration_Procedures.md
+    ├── Messenger_Integration.md
     └── Running_Tests.md
 ```
 
@@ -125,6 +151,7 @@ StockNotificationManager/
 
 - **[Angel One Setup Guide](StockNotificationManager/Documentation/AngelOne_SmartAPI_Setup.md)** - Complete SmartAPI registration and setup
 - **[Broker Integration](StockNotificationManager/Documentation/Broker_Integration_Procedures.md)** - Technical procedures for broker usage
+- **[Messenger Integration](StockNotificationManager/Documentation/Messenger_Integration.md)** - WhatsApp & Telegram setup and usage
 - **[Running Tests](StockNotificationManager/Documentation/Running_Tests.md)** - How to run integration tests
 
 ---
@@ -134,6 +161,8 @@ StockNotificationManager/
 - Python 3.8+
 - PySide6 (Qt6 for Python)
 - smartapi-python (Angel One API)
+- pywhatkit (WhatsApp automation)
+- python-telegram-bot (Telegram Bot API)
 
 ---
 

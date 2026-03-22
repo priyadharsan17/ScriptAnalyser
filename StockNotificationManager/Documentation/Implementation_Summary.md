@@ -266,11 +266,17 @@ TCS             LTP: ₹  3,789.50  Change:  -0.45%  Volume:     987,654
 2. `src/angel_one_broker.py` - Angel One implementation
 3. `src/motilal_oswal_broker.py` - Motilal Oswal implementation
 4. `src/broker_manager.py` - Broker factory
-5. `test_broker.py` - Standalone test script
-6. `angel_config.example.json` - Config template
-7. `Documentation/AngelOne_SmartAPI_Setup.md` - Setup guide
-8. `Documentation/Broker_Integration_Procedures.md` - Technical procedures
-9. `Documentation/Running_Tests.md` - Test guide
+5. `src/messenger_base.py` - Abstract messenger class
+6. `src/whatsapp_messenger.py` - WhatsApp implementation
+7. `src/telegram_messenger.py` - Telegram implementation
+8. `src/messenger_manager.py` - Messenger factory
+9. `test_broker.py` - Standalone broker test script
+10. `test_messengers.py` - Interactive messenger test script
+11. `angel_config.example.json` - Config template
+12. `Documentation/AngelOne_SmartAPI_Setup.md` - Setup guide
+13. `Documentation/Broker_Integration_Procedures.md` - Technical procedures
+14. `Documentation/Messenger_Integration.md` - WhatsApp & Telegram guide
+15. `Documentation/Running_Tests.md` - Test guide
 
 ### Modified Files:
 1. `main.py` - Added broker integration and test function
@@ -281,14 +287,74 @@ TCS             LTP: ₹  3,789.50  Change:  -0.45%  Volume:     987,654
 
 ✅ **OOP Design**: Abstract base class with concrete implementations  
 ✅ **Angel One Integration**: Full SmartAPI support  
+✅ **WhatsApp Integration**: Browser automation via pywhatkit  
+✅ **Telegram Integration**: Bot API with full media support  
 ✅ **Thread Support**: Background testing capability  
 ✅ **Nifty 50 Demo**: Fetches and displays top 10 stocks  
 ✅ **LTP Retrieval**: Real-time price data  
 ✅ **WebSocket Ready**: Live feed integration  
-✅ **Security**: Credentials via env vars, never hardcoded  
-✅ **Documentation**: 1000+ lines of comprehensive guides  
+✅ **Message Delivery**: Send alerts to numbers/groups/channels  
+✅ **Security**: Credentials via config files, never hardcoded  
+✅ **Documentation**: 1500+ lines of comprehensive guides  
 ✅ **Error Handling**: Graceful failures, detailed logging  
-✅ **Extensible**: Easy to add new brokers  
+✅ **Extensible**: Easy to add new brokers and messengers  
+
+## Messenger Integration (March 2026)
+
+Following the same OOP architecture pattern, a messenger abstraction system was implemented:
+
+### Architecture Components:
+
+#### 1. Messenger Base (`src/messenger_base.py`)
+- Abstract class `MessengerBase` defining messenger interface
+- Enums: `MessengerStatus`, `MessageType`
+- Data class: `MessageReceipt` for tracking message delivery
+- Abstract methods: send_message_to_number, send_message_to_group, send_message_to_channel
+
+#### 2. WhatsApp Implementation (`src/whatsapp_messenger.py`)
+- Uses `pywhatkit` library for WhatsApp Web automation
+- Features: Send text/images to numbers and groups
+- Requires: WhatsApp Web logged in on browser
+
+#### 3. Telegram Implementation (`src/telegram_messenger.py`)
+- Uses `python-telegram-bot` library (Bot API)
+- Features: Send text/images/documents/videos/audio to users/groups/channels
+- Requires: Bot token from @BotFather
+- Supports HTML formatting
+
+#### 4. Messenger Manager (`src/messenger_manager.py`)
+- Factory pattern for creating messengers
+- `MessengerType` enum: WHATSAPP, TELEGRAM
+- Lifecycle management and cleanup
+
+### Test Script: `test_messengers.py`
+Interactive test script for:
+- Testing WhatsApp and Telegram separately or together
+- Sending messages to numbers and groups
+- Verifying messenger functionality
+
+### Integration with Broker:
+```python
+# Send stock alerts via Telegram
+telegram = messenger_manager.create_messenger(
+    MessengerType.TELEGRAM, 
+    bot_token="YOUR_TOKEN"
+)
+
+# Get stock price from broker
+ltp_data = broker.get_ltp(exchange, token)
+
+# Send alert
+alert = f"📊 {symbol}: ₹{ltp_data.ltp}"
+telegram.send_message_to_number(chat_id, alert, MessageType.TEXT)
+```
+
+### Dependencies Added:
+- `pywhatkit==5.4` - WhatsApp Web automation
+- `python-telegram-bot==22.7` - Telegram Bot API
+
+### Documentation:
+- `Documentation/Messenger_Integration.md` - Complete setup and usage guide (500+ lines)
 
 ## Next Steps
 
@@ -296,13 +362,16 @@ To extend the functionality:
 
 1. **Add more brokers**: Follow `Broker_Integration_Procedures.md`
 2. **Build UI for broker selection**: Create QML screens
-3. **Implement price alerts**: Use WebSocket live feed
+3. **Implement price alerts**: ✅ Messengers ready, use WebSocket live feed
 4. **Add portfolio tracking**: Store and monitor holdings
-5. **Create notification system**: Alert on price changes
+5. **Create notification system**: ✅ WhatsApp and Telegram integrated
 6. **Add charting**: Integrate price history visualization
+7. **Smart alerts**: Combine broker + messenger for automated notifications
 
 ---
 
 **Implementation Date**: March 2026  
 **Status**: ✅ Complete and tested  
-**Ready for**: Integration testing with real credentials
+**Broker Integration**: ✅ Angel One SmartAPI fully functional  
+**Messenger Integration**: ✅ WhatsApp & Telegram ready for testing  
+**Ready for**: Real-world stock monitoring and alerts
