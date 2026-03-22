@@ -159,15 +159,14 @@ Item {
                                 Connections {
                                     target: telegramSettingsBackend
                                     function onSettingsLoaded(settingsJson) {
+                                        console.log("Settings loaded:", settingsJson)
                                         var settings = JSON.parse(settingsJson)
+                                        console.log("Bot token:", settings.bot_token)
+                                        console.log("Stock chat ID:", settings.stock_notification_chat_id)
+                                        console.log("Threshold chat ID:", settings.threshold_notification_chat_id)
                                         botTokenField.text = settings.bot_token || ""
-                                        
-                                        // Load chat IDs (handle both array and string)
-                                        var chatIds = settings.chat_ids || []
-                                        if (typeof chatIds === 'string') {
-                                            chatIds = chatIds ? [chatIds] : []
-                                        }
-                                        chatIdsField.text = chatIds.join(", ")
+                                        stockChatIdField.text = settings.stock_notification_chat_id || ""
+                                        thresholdChatIdField.text = settings.threshold_notification_chat_id || ""
                                     }
                                 }
                             }
@@ -181,27 +180,112 @@ Item {
                             }
                         }
                         
-                        // Chat IDs Field
+                        // Fetch Chat IDs Button
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingSmall
+                            
+                            CustomButton {
+                                Layout.fillWidth: true
+                                height: 50
+                                text: fetchChatIdsButton.fetching ? "Fetching... (Send messages to your groups)" : "🔍 Fetch Chat IDs"
+                                buttonColor: Theme.info
+                                hoverColor: "#2563eb"
+                                pressedColor: "#1d4ed8"
+                                textColor: "#ffffff"
+                                enabled: !fetchChatIdsButton.fetching && botTokenField.text.trim() !== ""
+                                
+                                property bool fetching: false
+                                id: fetchChatIdsButton
+                                
+                                onClicked: {
+                                    fetching = true
+                                    telegramSettingsBackend.fetchChatId()
+                                }
+                                
+                                Connections {
+                                    target: telegramSettingsBackend
+                                    function onChatIdFetched(chatsJson, success, message) {
+                                        console.log("Fetch chat IDs - received:", chatsJson, success, message)
+                                        fetchChatIdsButton.fetching = false
+                                        
+                                        if (success) {
+                                            var chats = JSON.parse(chatsJson)
+                                            console.log("Parsed chats:", JSON.stringify(chats))
+                                            if (chats.length > 0) {
+                                                chatSelectionPopup.chats = chats
+                                                chatSelectionPopup.open()
+                                            } else {
+                                                statusText.text = "No chats found. Please send messages and try again."
+                                                statusText.isError = true
+                                                statusMessageTimer.restart()
+                                            }
+                                        } else {
+                                            statusText.text = message
+                                            statusText.isError = true
+                                            statusMessageTimer.restart()
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Click to fetch all chat IDs. After clicking, send messages to your groups within 30 seconds."
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        
+                        // Stock Notification Group Chat ID
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingSmall
                             
                             Text {
-                                text: "Chat IDs *"
+                                text: "Stock Notification Group Chat ID *"
                                 font.pixelSize: Theme.fontSizeNormal
                                 font.bold: true
                                 color: Theme.textPrimary
                             }
                             
                             CustomTextField {
-                                id: chatIdsField
+                                id: stockChatIdField
                                 Layout.fillWidth: true
-                                placeholder: "Enter chat IDs separated by commas"
+                                placeholder: "Enter manually or fetch above"
                             }
                             
                             Text {
                                 Layout.fillWidth: true
-                                text: "Enter group/channel chat IDs separated by commas (e.g., -1001234567890, -1009876543210)"
+                                text: "Chat ID for stock notifications"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        
+                        // Threshold Notification Group Chat ID
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingSmall
+                            
+                            Text {
+                                text: "Threshold Notification Group Chat ID"
+                                font.pixelSize: Theme.fontSizeNormal
+                                font.bold: true
+                                color: Theme.textPrimary
+                            }
+                            
+                            CustomTextField {
+                                id: thresholdChatIdField
+                                Layout.fillWidth: true
+                                placeholder: "Enter manually or fetch above (optional)"
+                            }
+                            
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Chat ID for threshold notifications (optional)"
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textTertiary
                                 wrapMode: Text.WordWrap
@@ -228,13 +312,10 @@ Item {
                                 id: saveButton
                                 
                                 onClicked: {
-                                    // Parse chat IDs
-                                    var chatIdsText = chatIdsField.text.trim()
-                                    var chatIds = chatIdsText ? chatIdsText.split(",").map(function(id) { return id.trim() }).filter(function(id) { return id !== "" }) : []
-                                    
                                     var settings = {
                                         "bot_token": botTokenField.text.trim(),
-                                        "chat_ids": chatIds
+                                        "stock_notification_chat_id": stockChatIdField.text.trim(),
+                                        "threshold_notification_chat_id": thresholdChatIdField.text.trim()
                                     }
                                     
                                     saving = true
@@ -318,14 +399,15 @@ Item {
                         anchors.centerIn: parent
                         spacing: Theme.spacingLarge
                         
+                        // Section Header
                         Text {
-                            text: "Test Message"
+                            text: "🧪 Test Message"
                             font.pixelSize: Theme.fontSizeLarge
                             font.bold: true
                             color: Theme.textPrimary
                         }
                         
-                        // Group Selector
+                        // Group Selection
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingSmall
@@ -340,31 +422,82 @@ Item {
                             ComboBox {
                                 id: groupComboBox
                                 Layout.fillWidth: true
-                                height: 50
+                                Layout.preferredHeight: 45
                                 
                                 textRole: "name"
                                 valueRole: "chat_id"
                                 
-                                displayText: currentIndex >= 0 ? model[currentIndex].name : "No groups loaded"
-                                
-                                background: Rectangle {
-                                    color: Theme.inputBackground
-                                    border.color: Theme.inputBorder
-                                    border.width: 1
-                                    radius: Theme.radiusNormal
-                                }
+                                model: []
                                 
                                 contentItem: Text {
                                     leftPadding: Theme.spacingNormal
+                                    rightPadding: (groupComboBox.indicator ? groupComboBox.indicator.width : 0) + groupComboBox.spacing
+                                    
                                     text: groupComboBox.displayText
                                     font.pixelSize: Theme.fontSizeNormal
                                     color: Theme.textPrimary
                                     verticalAlignment: Text.AlignVCenter
+                                    elide: Text.ElideRight
                                 }
+                                
+                                background: Rectangle {
+                                    implicitWidth: 200
+                                    implicitHeight: 45
+                                    color: groupComboBox.pressed ? Theme.surfaceHover : Theme.surfaceLight
+                                    border.color: groupComboBox.activeFocus ? Theme.primary : Theme.cardBorder
+                                    border.width: 1
+                                    radius: Theme.radiusNormal
+                                }
+                                
+                                popup: Popup {
+                                    y: groupComboBox.height - 1
+                                    width: groupComboBox.width
+                                    implicitHeight: contentItem.implicitHeight
+                                    padding: 1
+                                    
+                                    contentItem: ListView {
+                                        clip: true
+                                        implicitHeight: contentHeight
+                                        model: groupComboBox.popup.visible ? groupComboBox.delegateModel : null
+                                        currentIndex: groupComboBox.highlightedIndex
+                                        
+                                        ScrollIndicator.vertical: ScrollIndicator { }
+                                    }
+                                    
+                                    background: Rectangle {
+                                        color: Theme.surface
+                                        border.color: Theme.cardBorder
+                                        border.width: 1
+                                        radius: Theme.radiusNormal
+                                    }
+                                }
+                                
+                                delegate: ItemDelegate {
+                                    width: groupComboBox.width
+                                    contentItem: Text {
+                                        text: modelData.name
+                                        font.pixelSize: Theme.fontSizeNormal
+                                        color: Theme.textPrimary
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                    highlighted: groupComboBox.highlightedIndex === index
+                                    background: Rectangle {
+                                        color: highlighted ? Theme.primaryLight : "transparent"
+                                    }
+                                }
+                            }
+                            
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Click 'Load Groups' to populate this list"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.textTertiary
+                                wrapMode: Text.WordWrap
                             }
                         }
                         
-                        // Message Field
+                        // Message Input
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: Theme.spacingSmall
@@ -378,29 +511,27 @@ Item {
                             
                             Rectangle {
                                 Layout.fillWidth: true
-                                height: 100
-                                color: Theme.inputBackground
-                                border.color: messageArea.activeFocus ? Theme.inputFocus : Theme.inputBorder
-                                border.width: messageArea.activeFocus ? 2 : 1
+                                Layout.preferredHeight: 120
+                                color: Theme.surfaceLight
+                                border.color: messageInput.activeFocus ? Theme.primary : Theme.cardBorder
+                                border.width: 1
                                 radius: Theme.radiusNormal
-                                
-                                Behavior on border.color {
-                                    ColorAnimation { duration: Theme.animationDuration }
-                                }
                                 
                                 ScrollView {
                                     anchors.fill: parent
-                                    anchors.margins: Theme.spacingSmall
+                                    anchors.margins: 1
                                     
                                     TextArea {
-                                        id: messageArea
+                                        id: messageInput
                                         placeholderText: "Type your test message here..."
                                         font.pixelSize: Theme.fontSizeNormal
                                         color: Theme.textPrimary
                                         wrapMode: TextArea.Wrap
                                         selectByMouse: true
                                         
-                                        background: Item {}
+                                        background: Rectangle {
+                                            color: "transparent"
+                                        }
                                     }
                                 }
                             }
@@ -412,27 +543,20 @@ Item {
                             height: 50
                             text: sendButton.sending ? "Sending..." : "Send Test Message"
                             buttonColor: Theme.success
-                            hoverColor: "#059669"
-                            pressedColor: "#047857"
+                            hoverColor: "#10b981"
+                            pressedColor: "#059669"
                             textColor: "#ffffff"
-                            enabled: !sendButton.sending && groupComboBox.currentIndex >= 0
+                            enabled: !sendButton.sending && groupComboBox.currentIndex >= 0 && messageInput.text.trim() !== ""
                             
                             property bool sending: false
                             id: sendButton
                             
                             onClicked: {
-                                var chatId = groupComboBox.model[groupComboBox.currentIndex].chat_id
-                                var message = messageArea.text.trim()
-                                
-                                if (!message) {
-                                    statusText.text = "Please enter a message"
-                                    statusText.isError = true
-                                    statusMessageTimer.restart()
-                                    return
+                                if (groupComboBox.currentIndex >= 0) {
+                                    var selectedGroup = groupComboBox.model[groupComboBox.currentIndex]
+                                    sending = true
+                                    telegramSettingsBackend.sendTestMessage(selectedGroup.chat_id, messageInput.text)
                                 }
-                                
-                                sending = true
-                                telegramSettingsBackend.sendTestMessage(chatId, message)
                             }
                             
                             Connections {
@@ -441,57 +565,207 @@ Item {
                                     sendButton.sending = false
                                     statusText.text = message
                                     statusText.isError = !success
-                                    statusMessageTimer.interval = 5000
                                     statusMessageTimer.restart()
+                                    
+                                    if (success) {
+                                        messageInput.text = ""
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+        
+        // Auto-hide status message timer
+        Timer {
+            id: statusMessageTimer
+            interval: 5000
+            running: false
+            repeat: false
+            onTriggered: {
+                statusText.text = ""
+            }
+        }
+        
+        // Chat Selection Popup
+        Rectangle {
+            id: chatSelectionPopup
+            anchors.centerIn: parent
+            width: Math.min(parent.width * 0.8, 600)
+            height: Math.min(parent.height * 0.7, 500)
+            color: Theme.surface
+            radius: Theme.radiusLarge
+            border.color: Theme.cardBorder
+            border.width: 2
+            visible: opacity > 0
+            opacity: 0
+            z: 1000
+            
+            property var chats: []
+            
+            function open() {
+                opacity = 1
+            }
+            
+            function close() {
+                opacity = 0
+            }
+            
+            Behavior on opacity {
+                NumberAnimation { duration: 200 }
+            }
+            
+            // Shadow overlay
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -10000
+                color: "#80000000"
+                visible: chatSelectionPopup.opacity > 0
+                z: -1
                 
-                // Help Section
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: chatSelectionPopup.close()
+                }
+            }
+            
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: Theme.spacingLarge
+                spacing: Theme.spacingNormal
+                
+                // Header
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingNormal
+                    
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Select Chat IDs"
+                        font.pixelSize: Theme.fontSizeLarge
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
+                    
+                    CustomButton {
+                        text: "✕"
+                        width: 40
+                        height: 40
+                        buttonColor: Theme.surfaceLight
+                        hoverColor: Theme.surfaceHover
+                        textColor: Theme.textPrimary
+                        onClicked: chatSelectionPopup.close()
+                    }
+                }
+                
+                Text {
+                    Layout.fillWidth: true
+                    text: "Click on a chat to assign it to Stock or Threshold notifications:"
+                    font.pixelSize: Theme.fontSizeNormal
+                    color: Theme.textSecondary
+                    wrapMode: Text.WordWrap
+                }
+                
+                // Chat List
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: helpLayout.height + Theme.spacingLarge * 2
-                    color: "#eff6ff"
+                    Layout.fillHeight: true
+                    color: Theme.surfaceLight
                     radius: Theme.radiusNormal
-                    border.color: "#bfdbfe"
+                    border.color: Theme.cardBorder
                     border.width: 1
                     
-                    ColumnLayout {
-                        id: helpLayout
-                        width: parent.width - Theme.spacingLarge * 2
-                        anchors.centerIn: parent
+                    ListView {
+                        id: chatListView
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        clip: true
+                        model: chatSelectionPopup.chats
                         spacing: Theme.spacingSmall
                         
-                        Text {
-                            text: "ℹ️ Help"
-                            font.pixelSize: Theme.fontSizeNormal
-                            font.bold: true
-                            color: "#1e40af"
-                        }
-                        
-                        Text {
-                            Layout.fillWidth: true
-                            text: "• Create a bot using @BotFather and get your bot token\n• Add the bot to your group/channel\n• Get chat ID by forwarding a message to @userinfobot\n• Click 'Load Groups' to verify your settings\n• Send a test message to confirm everything works"
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: "#1e40af"
-                            wrapMode: Text.WordWrap
-                            lineHeight: 1.4
+                        delegate: Rectangle {
+                            width: chatListView.width - Theme.spacingSmall * 2
+                            height: chatItem.height
+                            x: Theme.spacingSmall
+                            color: "transparent"
+                            
+                            ColumnLayout {
+                                id: chatItem
+                                width: parent.width
+                                spacing: Theme.spacingSmall
+                                
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: chatInfo.height + Theme.spacingNormal * 2
+                                    color: Theme.surface
+                                    radius: Theme.radiusNormal
+                                    border.color: Theme.cardBorder
+                                    border.width: 1
+                                    
+                                    ColumnLayout {
+                                        id: chatInfo
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.margins: Theme.spacingNormal
+                                        spacing: Theme.spacingSmall
+                                        
+                                        Text {
+                                            text: modelData.title
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.bold: true
+                                            color: Theme.textPrimary
+                                        }
+                                        
+                                        Text {
+                                            text: "Chat ID: " + modelData.chat_id + " • Type: " + modelData.type
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.textSecondary
+                                        }
+                                    }
+                                }
+                                
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingNormal
+                                    
+                                    CustomButton {
+                                        Layout.fillWidth: true
+                                        text: "Stock Notifications"
+                                        buttonColor: Theme.primary
+                                        hoverColor: "#2563eb"
+                                        textColor: "#ffffff"
+                                        onClicked: {
+                                            stockChatIdField.text = modelData.chat_id
+                                            chatSelectionPopup.close()
+                                            statusText.text = "Assigned to Stock Notifications: " + modelData.title
+                                            statusText.isError = false
+                                            statusMessageTimer.restart()
+                                        }
+                                    }
+                                    
+                                    CustomButton {
+                                        Layout.fillWidth: true
+                                        text: "Threshold Notifications"
+                                        buttonColor: Theme.secondary
+                                        hoverColor: "#059669"
+                                        textColor: "#ffffff"
+                                        onClicked: {
+                                            thresholdChatIdField.text = modelData.chat_id
+                                            chatSelectionPopup.close()
+                                            statusText.text = "Assigned to Threshold Notifications: " + modelData.title
+                                            statusText.isError = false
+                                            statusMessageTimer.restart()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-    
-    // Timer to hide status message
-    Timer {
-        id: statusMessageTimer
-        interval: 3000
-        onTriggered: {
-            statusText.text = ""
-            interval = 3000 // Reset to default
         }
     }
 }
