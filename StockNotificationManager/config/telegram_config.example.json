@@ -1,9 +1,6 @@
 {
   "bot_token": "123456:ABC-DEF_your_bot_token_here",
-  "chat_ids": [
-    -1001234567890
-  ],
-  "stock_notification_group_chat_id": -1001234567890,
-  "threshold_notification_group_chat_id": -1001234567890,
+  "stock_notification_chat_id": "",
+  "threshold_notification_chat_id": "",
   "send_test_message": true
 }
