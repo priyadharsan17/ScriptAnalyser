@@ -680,7 +680,7 @@ Item {
                     ListView {
                         id: chatListView
                         anchors.fill: parent
-                        anchors.margins: 1
+                        anchors.margins: Theme.spacingSmall
                         clip: true
                         model: chatSelectionPopup.chats
                         spacing: Theme.spacingSmall

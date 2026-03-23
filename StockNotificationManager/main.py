@@ -21,6 +21,7 @@ from src.messenger_base import MessageType
 from src.settings_manager import SettingsManager
 from src.angel_one_settings_backend import AngelOneSettingsBackend
 from src.telegram_settings_backend import TelegramSettingsBackend
+from src.script_analysis_backend import ScriptAnalysisBackend
 
 # Configure logging
 logging.basicConfig(
@@ -342,6 +343,39 @@ def main():
     screen_navigator = ScreenNavigator()
     login_backend = LoginBackend()
     home_backend = HomeBackend()
+
+    # Authenticate Angel One broker from settings and set active broker
+    angel_broker = None
+    if angel_one_settings_manager:
+        try:
+            settings = angel_one_settings_manager.get_settings()
+            api_key = settings.get('api_key', '').strip()
+            client_id = settings.get('client_id', '').strip()
+            password = settings.get('password', '').strip()
+            totp_secret = settings.get('totp_secret', '').strip()
+
+            creds = {
+                'api_key': api_key,
+                'client_id': client_id,
+                'password': password,
+                'totp': totp_secret if totp_secret and totp_secret not in ['', 'optional_totp_secret', 'YOUR_TOTP_SECRET_HERE (optional)'] else None
+            }
+
+            # Try to set Angel One as the active broker (non-blocking here)
+            if api_key and client_id and password:
+                ok = broker_manager.set_active_broker(BrokerType.ANGEL_ONE, creds)
+                if ok:
+                    angel_broker = broker_manager.active_broker
+                    logger.info("Angel One broker authenticated and active")
+                else:
+                    logger.warning("Angel One authentication failed at startup")
+            else:
+                logger.info("Angel One credentials incomplete; skipping automatic auth")
+        except Exception as e:
+            logger.error(f"Failed to initialize Angel One broker from settings: {e}")
+
+    # Create Script Analysis backend and inject broker (may be None)
+    script_analysis_backend = ScriptAnalysisBackend(angel_broker)
     
     # Create Angel One Settings backend
     angel_one_settings_backend = None
@@ -360,6 +394,7 @@ def main():
     root_context.setContextProperty("homeBackend", home_backend)
     root_context.setContextProperty("angelOneSettingsBackend", angel_one_settings_backend)
     root_context.setContextProperty("telegramSettingsBackend", telegram_settings_backend)
+    root_context.setContextProperty("scriptAnalysisBackend", script_analysis_backend)
     
     # Add import path for QML modules
     engine.addImportPath(str(current_dir / "qml"))

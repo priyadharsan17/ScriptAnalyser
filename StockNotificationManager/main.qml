@@ -98,5 +98,20 @@ Window {
             
             opacity: active ? 1 : 0
         }
+
+        // Script Analysis Screen
+        Loader {
+            id: scriptAnalysisLoader
+            anchors.fill: parent
+            source: "qml/ScriptAnalysisScreen.qml"
+            active: screenNavigator.currentScreen === "scriptAnalysis"
+            visible: active
+
+            Behavior on opacity {
+                NumberAnimation { duration: Theme.animationDurationSlow }
+            }
+
+            opacity: active ? 1 : 0
+        }
     }
 }

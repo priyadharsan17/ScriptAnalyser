@@ -38,3 +38,6 @@ class HomeBackend(QObject):
         # Navigate to settings screen if Settings card is clicked
         if cardName == "Settings":
             self.cardNavigate.emit("settings")
+        elif cardName == "Script Analysis":
+            # Navigate to the Script Analysis screen
+            self.cardNavigate.emit("scriptAnalysis")
